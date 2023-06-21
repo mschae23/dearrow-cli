@@ -1,0 +1,11 @@
+# Rust
+target/
+
+# Cargo
+
+# IntelliJ IDEA
+.idea/
+**.iml
+
+# Fleet
+.fleet/
