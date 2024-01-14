@@ -2,15 +2,21 @@
 A CLI program to view and vote for DeArrow submissions.
 
 ## Usage
-### View titles
+### View submissions
 ```
 dearrow-cli view title -v <VIDEO_ID>
-```
-
-### View thumbnails
-```
 dearrow-cli view thumbnail -v <VIDEO_ID>
 ```
+
+Legend:
+- `d`: Removed by downvotes
+- `r`: Replaced by submitter
+- `h`: Title / thumbnail should only appear in submission menu (score < 0)
+- `u`: Submitted by unverified user
+- `l`: Locked by a VIP
+- `rm`: Removed by a VIP
+- `v`: Submitted by a VIP
+- `x`: Shadowhidden
 
 ### Vote
 Voting requires your private ID to be set using the `SPONSORBLOCK_PRIVATE_USERID` environment variable.
