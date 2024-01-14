@@ -1,5 +1,5 @@
 # DeArrow CLI
-A CLI program to vote for DeArrow submissions.
+A CLI program to view and vote for DeArrow submissions.
 
 ## License
 Copyright (C) 2024  mschae23

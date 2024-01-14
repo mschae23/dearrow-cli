@@ -1,4 +1,4 @@
-// dearrow-cli - program to vote for DeArrow submissions
+// dearrow-cli - program to view and vote for DeArrow submissions
 // Copyright (C) 2024  mschae23
 //
 // This program is free software: you can redistribute it and/or modify
