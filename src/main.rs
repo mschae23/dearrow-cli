@@ -15,13 +15,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufRead;
+use std::path::PathBuf;
 use anyhow::{anyhow, bail, Context};
 use chrono::NaiveDateTime;
 use clap::Parser;
 use dearrow_browser_api::{ApiThumbnail, ApiTitle};
 use reqwest::Url;
 
-const USER_AGENT: &str = "dearrow-cli/3.1.1";
+const USER_AGENT: &str = "dearrow-cli/3.2.0";
 
 mod utils {
     use chrono::NaiveDateTime;
@@ -91,6 +94,20 @@ pub enum Verb {
         #[arg(value_enum)]
         kind: SubmissionKind,
     },
+    #[command(hide = true)]
+    Batch {
+        #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+        input: PathBuf,
+        /// When set, disables auto-lock (only has an effect for VIP users).
+        ///
+        /// Disabling auto-vote makes the vote count like it would coming from a normal user,
+        /// which means:
+        /// - A new submission is not locked by default
+        /// - Voting for an existing submission will increment its score, but not lock it
+        /// - Downvoting an existing submission will decrement its score, but not immediately remove it
+        #[arg(long, short = 'n', help = "When set, disables auto-lock (only has an effect for VIP users)", long_help = "When set, disables auto-lock (only has an effect for VIP users).\n\nDisabling auto-vote makes the vote count like it would coming from a normal user, which means:\n- A new submission is not locked by default\n- Voting for an existing submission will increment its score, but not lock it\n- Downvoting an existing submission will decrement its score, but not immediately remove it")]
+        no_autolock: bool,
+    },
 }
 
 #[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
@@ -146,12 +163,7 @@ fn main() -> anyhow::Result<()> {
 
     match config.verb {
         Verb::Vote { kind, video, downvote, no_autolock } => {
-            let private_user_id = match std::env::var("SPONSORBLOCK_PRIVATE_USERID") {
-                Ok(var) => var,
-                Err(err) => {
-                    return Err(anyhow!("Could not get private user ID: {}", err));
-                },
-            };
+            let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Could not get private user ID")?;
 
             let mut request_data = HashMap::new();
             request_data.insert("service", serde_json::Value::String(String::from("YouTube")));
@@ -186,6 +198,7 @@ fn main() -> anyhow::Result<()> {
 
             let client = reqwest::blocking::Client::new();
             let response = client.post(&config.post_branding_api)
+                .header("User-Agent", USER_AGENT)
                 .json(&request_data)
                 .send().context("Failed to send branding request")?;
             eprintln!("Sent request. Response: {}", response.status());
@@ -201,7 +214,7 @@ fn main() -> anyhow::Result<()> {
                     let url = Url::parse(&config.get_titles_by_video_id_api)?;
                     let url = url.join(&video)?;
 
-                    let response = client.get(url).send().context("Failed to send branding request")?;
+                    let response = client.get(url).header("User-Agent", USER_AGENT).send().context("Failed to send branding request")?;
 
                     if response.status() != 200 {
                         bail!("Failed to get titles. Response: {}\n{}", response.status(), response.text()?);
@@ -214,7 +227,8 @@ fn main() -> anyhow::Result<()> {
                         "https://www.youtube-nocookie.com/oembed",
                         &[("url", format!("https://youtu.be/{}", video))]
                     ).context("Failed to construct an oembed request URL")?;
-                    let resp: OEmbedResponse = client.get(url).send().context("Failed to send oembed request")?
+                    let resp: OEmbedResponse = client.get(url).header("User-Agent", USER_AGENT)
+                        .send().context("Failed to send oembed request")?
                         .json().context("Failed to deserialize oembed response")?;
                     let original_title = resp.title.context("oembed response contained no title")?;
 
@@ -292,7 +306,7 @@ fn main() -> anyhow::Result<()> {
                     let url = Url::parse(&config.get_thumbnails_by_video_id_api)?;
                     let url = url.join(&video)?;
 
-                    let response = client.get(url).send().context("Failed to send branding request")?;
+                    let response = client.get(url).header("User-Agent", USER_AGENT).send().context("Failed to send branding request")?;
 
                     if response.status() != 200 {
                         bail!("Failed to get thumbnails. Response: {}\n{}", response.status(), response.text()?);
@@ -364,6 +378,52 @@ fn main() -> anyhow::Result<()> {
                     let table = builder.build().with(table_settings).to_string();
                     println!("{}", table);
                 },
+            }
+
+            Ok(())
+        },
+        Verb::Batch { input, no_autolock } => {
+            let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Failed to get private user ID")?;
+
+            let mut request_data = HashMap::new();
+            request_data.insert("service", serde_json::Value::String(String::from("YouTube")));
+            request_data.insert("userAgent", serde_json::Value::String(String::from(USER_AGENT)));
+            request_data.insert("userID", serde_json::Value::String(String::from(&private_user_id)));
+            request_data.insert("autoLock", serde_json::Value::Bool(!no_autolock));
+
+            let file = File::open(input).context("Failed to open input file")?;
+            let reader = std::io::BufReader::new(file);
+            let client = reqwest::blocking::Client::new();
+
+            let stdin = std::io::stdin();
+            let mut buf = String::new();
+
+            for line in reader.lines() {
+                let line = line.context("Failed to read line in input file")?;
+                let url = Url::parse_with_params(
+                    "https://www.youtube-nocookie.com/oembed",
+                    &[("url", format!("https://youtu.be/{}", line))]
+                ).context("Failed to construct an oembed request URL")?;
+                let resp: OEmbedResponse = client.get(url).header("User-Agent", USER_AGENT)
+                    .send().context("Failed to send oembed request")?
+                    .json().context("Failed to deserialize oembed response")?;
+                let original_title = resp.title.context("oembed response contained no title")?;
+
+                println!("[{}] {}", line, original_title);
+                stdin.read_line(&mut buf).context("Failed to read stdin")?;
+
+                request_data.insert("videoID", serde_json::Value::String(line));
+                request_data.insert("title", serde_json::Value::Object([
+                    (String::from("title"), serde_json::Value::String(buf.clone())),
+                ].into_iter().collect()));
+
+                let response = client.post(&config.post_branding_api)
+                    .header("User-Agent", USER_AGENT)
+                    .json(&request_data)
+                    .send().context("Failed to send branding request")?;
+                println!("Sent request. Response: {}\n", response.status());
+
+                buf.clear();
             }
 
             Ok(())
