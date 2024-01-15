@@ -21,7 +21,7 @@ use clap::Parser;
 use dearrow_browser_api::{ApiThumbnail, ApiTitle};
 use reqwest::Url;
 
-const USER_AGENT: &str = "CLI script (mschae23)/3.1.0";
+const USER_AGENT: &str = "dearrow-cli/3.1.1";
 
 mod utils {
     use chrono::NaiveDateTime;
@@ -87,7 +87,7 @@ pub enum Verb {
         /// ID of the video to view submissions for.
         #[arg(long, short, value_name = "VIDEO_ID")]
         video: String,
-        /// The kind of submissions to show..
+        /// The kind of submissions to show.
         #[arg(value_enum)]
         kind: SubmissionKind,
     },

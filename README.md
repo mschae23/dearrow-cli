@@ -8,6 +8,9 @@ dearrow-cli view title -v <VIDEO_ID>
 dearrow-cli view thumbnail -v <VIDEO_ID>
 ```
 
+By default, this uses [DeArrow Browser](https://github.com/mini-bomba/DeArrowBrowser)'s internal API.
+Uses DeArrow data licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) from <https://dearrow.ajay.app/>.
+
 Legend:
 - `d`: Removed by downvotes
 - `r`: Replaced by submitter
