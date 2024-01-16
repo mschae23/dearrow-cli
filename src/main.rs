@@ -18,6 +18,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::PathBuf;
+use std::sync::Arc;
 use anyhow::{anyhow, bail, Context};
 use chrono::NaiveDateTime;
 use clap::Parser;
@@ -107,6 +108,9 @@ pub enum Verb {
         /// - Downvoting an existing submission will decrement its score, but not immediately remove it
         #[arg(long, short = 'n', help = "When set, disables auto-lock (only has an effect for VIP users)", long_help = "When set, disables auto-lock (only has an effect for VIP users).\n\nDisabling auto-vote makes the vote count like it would coming from a normal user, which means:\n- A new submission is not locked by default\n- Voting for an existing submission will increment its score, but not lock it\n- Downvoting an existing submission will decrement its score, but not immediately remove it")]
         no_autolock: bool,
+        /// When set, requests to the DeArrow server will be printed instead of sent.
+        #[arg(short, long)]
+        simulate: bool,
     },
 }
 
@@ -248,7 +252,7 @@ fn main() -> anyhow::Result<()> {
                             .max(if title.downvotes == 0 { 1 } else { title.downvotes.abs().ilog10() + 1 });
                     }
 
-                    for title in titles {
+                    for title in &titles {
                         let mut flags = format!("{:>width$} ({:>+width$} | {})", title.score, title.votes,
                             if title.downvotes == 0 {
                                 format!("{: >width$}-0", "", width = score_length.saturating_sub(2) as usize)
@@ -289,7 +293,7 @@ fn main() -> anyhow::Result<()> {
                             title.title.to_string(),
                             flags,
                             title.uuid.to_string(),
-                            if let Some(username) = title.username { format!("\"{}\"", username) } else { String::new() },
+                            if let Some(username) = title.username.as_ref().map(Arc::clone) { format!("\"{}\"", username) } else { String::new() },
                             title.user_id.to_string(),
                         ]);
                     }
@@ -299,7 +303,14 @@ fn main() -> anyhow::Result<()> {
                         .with(tabled::settings::Width::wrap(terminal_width as usize).priority::<tabled::settings::peaker::PriorityMax>())
                         .with(tabled::settings::Width::increase(terminal_width as usize));
 
-                    let table = builder.build().with(table_settings).to_string();
+                    let mut table = builder.build();
+                    table.with(table_settings);
+
+                    for (i, _) in titles.iter().enumerate() {
+                        table.modify(tabled::settings::object::Cell::new(i, 4),
+                            tabled::settings::Width::truncate(16).suffix("..."));
+                    }
+
                     println!("{}", table);
                 },
                 SubmissionKind::Thumbnail => {
@@ -382,7 +393,7 @@ fn main() -> anyhow::Result<()> {
 
             Ok(())
         },
-        Verb::Batch { input, no_autolock } => {
+        Verb::Batch { input, no_autolock, simulate } => {
             let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Failed to get private user ID")?;
 
             let mut request_data = HashMap::new();
@@ -412,16 +423,26 @@ fn main() -> anyhow::Result<()> {
                 println!("[{}] {}", line, original_title);
                 stdin.read_line(&mut buf).context("Failed to read stdin")?;
 
+                if buf == "\n" {
+                    buf.clear();
+                    println!("Skipped.\n");
+                    continue;
+                }
+
                 request_data.insert("videoID", serde_json::Value::String(line));
                 request_data.insert("title", serde_json::Value::Object([
-                    (String::from("title"), serde_json::Value::String(buf.clone())),
+                    (String::from("title"), serde_json::Value::String(buf[..buf.len() - 1].to_string())),
                 ].into_iter().collect()));
 
-                let response = client.post(&config.post_branding_api)
-                    .header("User-Agent", USER_AGENT)
-                    .json(&request_data)
-                    .send().context("Failed to send branding request")?;
-                println!("Sent request. Response: {}\n", response.status());
+                if !simulate {
+                    let response = client.post(&config.post_branding_api)
+                        .header("User-Agent", USER_AGENT)
+                        .json(&request_data)
+                        .send().context("Failed to send branding request")?;
+                    println!("Sent request. Response: {}\n", response.status());
+                } else {
+                    println!("Not sending request: {}\n", serde_json::to_string_pretty(&request_data).context("Failed to serialize request to JSON")?);
+                }
 
                 buf.clear();
             }
