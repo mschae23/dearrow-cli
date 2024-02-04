@@ -16,7 +16,6 @@
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::BufRead;
 use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::{anyhow, bail, Context};
@@ -408,19 +407,23 @@ fn main() -> anyhow::Result<()> {
 
             let stdin = std::io::stdin();
             let mut buf = String::new();
+            let mut reader = csv::Reader::from_reader(reader);
 
-            for line in reader.lines() {
-                let line = line.context("Failed to read line in input file")?;
+            for record in reader.records() {
+                let record = record.context("Failed to read line in input file")?;
+                let video_id = record.get(0).ok_or(anyhow!("Failed to get column 0 from CSV record"))?;
+                let old_title = record.get(1).ok_or(anyhow!("Failed to get column 1 from CSV record"))?;
+
                 let url = Url::parse_with_params(
                     "https://www.youtube-nocookie.com/oembed",
-                    &[("url", format!("https://youtu.be/{}", line))]
+                    &[("url", format!("https://youtu.be/{}", video_id))]
                 ).context("Failed to construct an oembed request URL")?;
                 let resp: OEmbedResponse = client.get(url).header("User-Agent", USER_AGENT)
                     .send().context("Failed to send oembed request")?
                     .json().context("Failed to deserialize oembed response")?;
                 let original_title = resp.title.context("oembed response contained no title")?;
 
-                println!("[{}] {}", line, original_title);
+                println!("[{}, {}] {}", video_id, original_title, old_title);
                 stdin.read_line(&mut buf).context("Failed to read stdin")?;
 
                 if buf == "\n" {
@@ -429,7 +432,7 @@ fn main() -> anyhow::Result<()> {
                     continue;
                 }
 
-                request_data.insert("videoID", serde_json::Value::String(line));
+                request_data.insert("videoID", serde_json::Value::String(video_id.to_owned()));
                 request_data.insert("title", serde_json::Value::Object([
                     (String::from("title"), serde_json::Value::String(buf[..buf.len() - 1].to_string())),
                 ].into_iter().collect()));
