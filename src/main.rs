@@ -24,7 +24,7 @@ use clap::Parser;
 use dearrow_browser_api::{ApiThumbnail, ApiTitle};
 use reqwest::Url;
 
-const USER_AGENT: &str = "dearrow-cli/3.2.0";
+const USER_AGENT: &str = "dearrow-cli/3.3.0";
 
 mod utils {
     use chrono::NaiveDateTime;
