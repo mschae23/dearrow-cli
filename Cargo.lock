@@ -266,8 +266,9 @@ dependencies = [
 
 [[package]]
 name = "dearrow-browser-api"
-version = "1.3.0"
-source = "git+https://github.com/mini-bomba/DeArrowBrowser.git#28f83dda0539e517141ab34befeaa6422ade904d"
+version = "1.13.0"
+source = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
+checksum = "cf939c9d2fba6561e5861721ef54ff029bccc62426e765a2960d0d157db65c90"
 dependencies = [
  "serde",
 ]
