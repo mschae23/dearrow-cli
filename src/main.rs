@@ -259,32 +259,47 @@ fn main() -> anyhow::Result<()> {
                                 format!("{:->width$}", -title.downvotes, width = score_length as usize)
                             }, width = score_length as usize);
 
+                        let mut flag = false;
+                        flags.push_str(", ");
+
                         if title.votes - title.downvotes < -1 {
-                            flags.push_str(", d"); // Removed by downvotes
+                            flags.push_str("d"); // Removed by downvotes
+                            flag = true;
                         } else if title.votes < 0 {
-                            flags.push_str(", r"); // Replaced by submitter
+                            flags.push_str("r"); // Replaced by submitter
+                            flag = true;
                         } else if title.score < 0 {
-                            flags.push_str(", h"); // Title should only appear in submission menus
+                            flags.push_str("h"); // Title should only appear in submission menus
+                            flag = true;
                         }
 
                         if title.unverified {
-                            flags.push_str(", u"); // Submitted by unverified user
+                            flags.push_str("u"); // Submitted by unverified user
+                            flag = true;
                         }
 
                         if title.locked {
-                            flags.push_str(", l"); // Locked by a VIP
+                            flags.push_str("l"); // Locked by a VIP
+                            flag = true;
                         }
 
                         if title.removed {
-                            flags.push_str(", rm"); // Removed by VIP
+                            flags.push_str("m"); // Removed by VIP
+                            flag = true;
                         }
 
                         if title.vip {
-                            flags.push_str(", v"); // Submitted by VIP
+                            flags.push_str("v"); // Submitted by VIP
+                            flag = true;
                         }
 
                         if title.shadow_hidden {
-                            flags.push_str(", x"); // Shadowhidden
+                            flags.push_str("x"); // Shadowhidden
+                            flag = true;
+                        }
+
+                        if !flag {
+                            flags.truncate(flags.len() - 2);
                         }
 
                         builder.push_record([

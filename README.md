@@ -17,7 +17,7 @@ Legend:
 - `h`: Title / thumbnail should only appear in submission menu (score < 0)
 - `u`: Submitted by unverified user
 - `l`: Locked by a VIP
-- `rm`: Removed by a VIP
+- `m`: Removed by a VIP
 - `v`: Submitted by a VIP
 - `x`: Shadowhidden
 
