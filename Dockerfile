@@ -1,5 +1,6 @@
 FROM rust:alpine as builder
 ENV OPENSSL_STATIC=true
+ENV CARGO_REGISTRIES_MSCHAE23_INDEX=sparse+https://mschae23.de/git/api/packages/mschae23/cargo/
 WORKDIR /dearrow-cli
 RUN apk add --no-cache \
     openssl-dev \

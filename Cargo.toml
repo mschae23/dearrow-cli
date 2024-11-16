@@ -10,9 +10,6 @@ license = "GPL-3.0-or-later"
 lto = true
 strip = "symbols"
 
-[registries.mschae23]
-index = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
-
 [dependencies]
 clap = { version = "4.4.16", features = ["derive"] }
 dearrow-browser-api = { version = "1.13.0", registry = "mschae23" }

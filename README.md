@@ -36,6 +36,15 @@ dearrow-cli vote -v <VIDEO_ID> --downvote thumbnail original
 
 If you are a VIP user and want to disable auto-lock, pass the `--no-auto-lock` option before `title` or `thumbnail`.
 
+## Building
+To build, `dearrow-cli` requires you to add another Cargo package registry to your `~/.cargo/config.toml`:
+```
+[registries.mschae23]
+index = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
+```
+
+You should be able to build using the regular `cargo build` and `cargo build --release` commands then.
+
 ## License
 Copyright (C) 2024  mschae23
 
