@@ -19,7 +19,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::{anyhow, bail, Context};
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use clap::Parser;
 use dearrow_browser_api::sync::{ApiThumbnail, ApiTitle};
 use reqwest::Url;
@@ -27,11 +27,11 @@ use reqwest::Url;
 const USER_AGENT: &str = "dearrow-cli/3.4.0";
 
 mod utils {
-    use chrono::NaiveDateTime;
+    use chrono::{DateTime, Utc};
 
     const TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-    pub fn render_naive_datetime(dt: NaiveDateTime) -> String {
+    pub fn render_datetime(dt: DateTime<Utc>) -> String {
         format!("{}", dt.format(TIME_FORMAT))
     }
 }
@@ -303,7 +303,7 @@ fn main() -> anyhow::Result<()> {
                         }
 
                         builder.push_record([
-                            NaiveDateTime::from_timestamp_millis(title.time_submitted).map_or(title.time_submitted.to_string(), utils::render_naive_datetime),
+                            DateTime::from_timestamp_millis(title.time_submitted).map_or(title.time_submitted.to_string(), utils::render_datetime),
                             title.title.to_string(),
                             flags,
                             title.uuid.to_string(),
@@ -314,7 +314,7 @@ fn main() -> anyhow::Result<()> {
 
                     let table_settings = tabled::settings::Settings::default()
                         .with(tabled::settings::Style::psql())
-                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority::<tabled::settings::peaker::PriorityMax>())
+                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority(tabled::settings::peaker::PriorityMax))
                         .with(tabled::settings::Width::increase(terminal_width as usize));
 
                     let mut table = builder.build();
@@ -386,7 +386,7 @@ fn main() -> anyhow::Result<()> {
                         }
 
                         builder.push_record([
-                            NaiveDateTime::from_timestamp_millis(thumbnail.time_submitted).map_or(thumbnail.time_submitted.to_string(), utils::render_naive_datetime),
+                            DateTime::from_timestamp_millis(thumbnail.time_submitted).map_or(thumbnail.time_submitted.to_string(), utils::render_datetime),
                             thumbnail.timestamp.map(|t| t.to_string()).unwrap_or_else(|| if thumbnail.original { String::from("Original") } else { String::from("Unknown") }),
                             flags,
                             thumbnail.uuid.to_string(),
@@ -397,7 +397,7 @@ fn main() -> anyhow::Result<()> {
 
                     let table_settings = tabled::settings::Settings::default()
                         .with(tabled::settings::Style::psql())
-                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority::<tabled::settings::peaker::PriorityMax>())
+                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority(tabled::settings::peaker::PriorityMax))
                         .with(tabled::settings::Width::increase(terminal_width as usize));
 
                     let table = builder.build().with(table_settings).to_string();

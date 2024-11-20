@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [3.4.1] – 2024-11-17
+
+### Changed
+- Updated other dependencies.
+
 ## [3.4.0] – 2024-11-17
 
 ### Changed
@@ -24,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [3.1.0] - 2024-01-14
 Initial release.
 
+[3.4.1]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.1
 [3.4.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.0
 [3.3.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.3.0
 [3.2.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.2.0
