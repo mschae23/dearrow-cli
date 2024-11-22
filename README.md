@@ -34,14 +34,14 @@ Uses DeArrow data licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/l
 
 Legend:
 - `o`: Original title
+- `m`: Removed by a VIP
+- `x`: Shadowhidden
 - `d`: Removed by downvotes
 - `r`: Replaced by submitter
 - `h`: Title / thumbnail should only appear in submission menu (score < 0)
 - `u`: Submitted by unverified user
 - `l`: Locked by a VIP
-- `m`: Removed by a VIP
 - `v`: Submitted by a VIP
-- `x`: Shadowhidden
 
 ### Vote
 Voting requires your private ID to be set using the `SPONSORBLOCK_PRIVATE_USERID` environment variable.

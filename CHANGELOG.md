@@ -5,14 +5,14 @@ The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-## Removed
+### Removed
 - `--post-branding-api`, `--get-titles-by-video-id-api`, and `--get-thumbnails-by-video-id-api` in favor of
   `--main-api` (for APIs provided by SponsorBlockServer or compatible) and `--browser-api` (for APIs provided by
   DeArrowBrowser or compatible).
 
 This is a breaking change.
 
-## Added
+### Added
 - `--main-api` and `--browser-api` arguments: see above.
 - `user <USER_ID> warnings (issued | received) [--newest <NEWEST>]` command.
   - This will display the warnings issued or received by a specific SponsorBlock or DeArrow user.
@@ -22,7 +22,7 @@ This is a breaking change.
 - `o` flag in the `view` command to indicate an original title. It is not displayed for thumbnails, since they
   show "original" in the timestamp column.
 
-## Changed
+### Changed
 - the `view` and `vote` commands no longer take the video ID as a flag (like `--video <VIDEO_ID>` or `-v <VIDEO_ID>`).
   Instead, they just take it as a regular argument: `vote <VIDEO_ID> title "Example"`.
   - This is a breaking change.
