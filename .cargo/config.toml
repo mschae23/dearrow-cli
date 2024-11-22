@@ -1,0 +1,3 @@
+[registries.mschae23]
+index = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
+

@@ -14,17 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
-use std::fs::File;
 use std::path::PathBuf;
-use std::sync::Arc;
-use anyhow::{anyhow, bail, Context};
-use chrono::DateTime;
-use clap::Parser;
-use dearrow_browser_api::sync::{ApiThumbnail, ApiTitle};
-use reqwest::Url;
+use clap::{Parser, Args};
+use clap::crate_version;
 
-const USER_AGENT: &str = "dearrow-cli/3.4.0";
+mod command;
+
+const USER_AGENT: &str = concat!("dearrow-cli/", crate_version!());
 
 mod utils {
     use chrono::{DateTime, Utc};
@@ -36,26 +32,33 @@ mod utils {
     }
 }
 
+/// A CLI program to view and vote for DeArrow submissions.
 #[derive(clap::Parser)]
+#[command(version, about, long_about = "A CLI program to view and vote for DeArrow submissions.")]
 pub struct Config {
     /// The action to do
     #[command(subcommand)]
     pub verb: Verb,
-    /// The URI for the POST /branding API endpoint.
-    #[arg(long, default_value = "https://sponsor.ajay.app/api/branding")]
-    pub post_branding_api: String,
-    /// A partial URI for the GET /titles API endpoint.
+    #[command(flatten)]
+    pub options: Options,
+}
+
+#[derive(Args)]
+pub struct Options {
+    /// The URI base for the main voting and query commands. It has to be compatible
+    /// with the DeArrow API (SponsorBlockServer).
     ///
-    /// The value provided will be concatenated with the video ID to form the final URI used.
+    /// The value provided will be concatenated with the API path to form the final URI used.
     /// Note that the trailing slash is significant.
-    #[arg(long, default_value = "https://dearrow.minibomba.pro/api/titles/video_id/")]
-    pub get_titles_by_video_id_api: String,
-    /// A partial URI for the GET /thumbnails API endpoint.
+    #[arg(long, default_value = "https://sponsor.ajay.app/api/")]
+    pub main_api: String,
+    /// The URI base of the API used for the database browser commands. It has to be
+    /// compatible with the internal API of DeArrowBrowser.
     ///
-    /// The value provided will be concatenated with the video ID to form the final URI used.
+    /// The value provided will be concatenated with the API path to form the final URI used.
     /// Note that the trailing slash is significant.
-    #[arg(long, default_value = "https://dearrow.minibomba.pro/api/thumbnails/video_id/")]
-    pub get_thumbnails_by_video_id_api: String,
+    #[arg(long, default_value = "https://dearrow.minibomba.pro/api/")]
+    pub browser_api: String,
 }
 
 #[derive(clap::Subcommand)]
@@ -66,7 +69,7 @@ pub enum Verb {
     #[command()]
     Vote {
         /// ID of the video to vote for a submission on.
-        #[arg(long, short, value_name = "VIDEO_ID")]
+        #[arg(value_name = "VIDEO_ID")]
         video: String,
         /// The kind of a submission (title or thumbnail).
         #[command(subcommand)]
@@ -88,11 +91,21 @@ pub enum Verb {
     #[command()]
     View {
         /// ID of the video to view submissions for.
-        #[arg(long, short, value_name = "VIDEO_ID")]
+        #[arg(value_name = "VIDEO_ID")]
         video: String,
         /// The kind of submissions to show.
         #[arg(value_enum)]
         kind: SubmissionKind,
+    },
+    /// View information about a specific user.
+    #[command()]
+    User {
+        /// The public ID of the user to look up information for.
+        #[arg(value_name = "USER_ID")]
+        user: String,
+        /// The kind of information to query about the user.
+        #[command(subcommand)]
+        subcommand: UserSubcommand,
     },
     #[command(hide = true)]
     Batch {
@@ -128,6 +141,11 @@ pub enum VoteSubmissionSubcommand {
     /// Vote for a title submission.
     #[command()]
     Title {
+        /// Whether to report this title submission as having been auto-warned.
+        ///
+        /// This is intended to log potentially low-quality submissions to DeArrow moderators.
+        #[arg(long, help = "Whether to report this title submission as having been auto-warned", long_help = "Whether to report this title submission as having been auto-warned.\n\nThis is intended to log potentially low-quality submissions to DeArrow moderators.")]
+        was_warned: bool,
         /// The title to vote for.
         #[arg()]
         title: String,
@@ -156,6 +174,42 @@ pub enum ThumbnailSubmission {
     }
 }
 
+#[derive(clap::Subcommand)]
+pub enum UserSubcommand {
+    /// View warnings associated with this user.
+    ///
+    /// Supports both received and issued warnings.
+    #[command()]
+    Warnings {
+        /// The kind of warnings to show.
+        #[arg(value_enum)]
+        kind: WarningKind,
+        /// Only show the newest n warnings. Set to `0` to show all.
+        #[arg(long, default_value = "0")]
+        newest: usize,
+    },
+    // TODO Submissions
+}
+
+#[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
+pub enum WarningKind {
+    /// View warnings issued by this user.
+    #[value()]
+    Issued,
+    /// View warnings received by this user.
+    #[value()]
+    Received,
+}
+
+impl WarningKind {
+    pub fn name(self: Self) -> &'static str {
+        match self {
+            Self::Issued => "issued",
+            Self::Received => "received",
+        }
+    }
+}
+
 #[derive(serde::Deserialize)]
 struct OEmbedResponse {
     title: Option<String>,
@@ -164,308 +218,17 @@ struct OEmbedResponse {
 fn main() -> anyhow::Result<()> {
     let config = Config::parse();
 
+    let client = reqwest::blocking::Client::new();
+    let terminal_width = termsize::get().map(|size| size.cols).unwrap_or(120);
+
     match config.verb {
-        Verb::Vote { kind, video, downvote, no_autolock } => {
-            let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Could not get private user ID")?;
-
-            let mut request_data = HashMap::new();
-            request_data.insert("service", serde_json::Value::String(String::from("YouTube")));
-            request_data.insert("userAgent", serde_json::Value::String(String::from(USER_AGENT)));
-            request_data.insert("userID", serde_json::Value::String(String::from(&private_user_id)));
-            request_data.insert("videoID", serde_json::Value::String(video));
-            request_data.insert("downvote", serde_json::Value::Bool(downvote));
-            request_data.insert("autoLock", serde_json::Value::Bool(!no_autolock));
-
-            match kind {
-                VoteSubmissionSubcommand::Title { title, } => {
-                    request_data.insert("title", serde_json::Value::Object([
-                        (String::from("title"), serde_json::Value::String(title)),
-                    ].into_iter().collect()));
-                },
-                VoteSubmissionSubcommand::Thumbnail { thumbnail, } => {
-                    match thumbnail {
-                        ThumbnailSubmission::Original {} => {
-                            request_data.insert("thumbnail", serde_json::Value::Object([
-                                (String::from("original"), serde_json::Value::Bool(true)),
-                            ].into_iter().collect()));
-                        },
-                        ThumbnailSubmission::At { timestamp, } => {
-                            request_data.insert("thumbnail", serde_json::Value::Object([
-                                (String::from("original"), serde_json::Value::Bool(false)),
-                                (String::from("timestamp"), serde_json::Value::Number(serde_json::Number::from_f64(timestamp).ok_or_else(|| anyhow!("Cannot parse timestamp"))?)),
-                            ].into_iter().collect()));
-                        },
-                    }
-                },
-            }
-
-            let client = reqwest::blocking::Client::new();
-            let response = client.post(&config.post_branding_api)
-                .header("User-Agent", USER_AGENT)
-                .json(&request_data)
-                .send().context("Failed to send branding request")?;
-            eprintln!("Sent request. Response: {}", response.status());
-
-            Ok(())
-        },
-        Verb::View { video, kind } => {
-            let client = reqwest::blocking::Client::new();
-            let terminal_width = termsize::get().map(|size| size.cols).unwrap_or(120);
-
-            match kind {
-                SubmissionKind::Title => {
-                    let url = Url::parse(&config.get_titles_by_video_id_api)?;
-                    let url = url.join(&video)?;
-
-                    let response = client.get(url).header("User-Agent", USER_AGENT).send().context("Failed to send branding request")?;
-
-                    if response.status() != 200 {
-                        bail!("Failed to get titles. Response: {}\n{}", response.status(), response.text()?);
-                    }
-
-                    let mut titles: Vec<ApiTitle> = response.json()?;
-                    titles.sort_by(|a, b| a.time_submitted.cmp(&b.time_submitted).reverse());
-
-                    let url = Url::parse_with_params(
-                        "https://www.youtube-nocookie.com/oembed",
-                        &[("url", format!("https://youtu.be/{}", video))]
-                    ).context("Failed to construct an oembed request URL")?;
-                    let resp: OEmbedResponse = client.get(url).header("User-Agent", USER_AGENT)
-                        .send().context("Failed to send oembed request")?
-                        .json().context("Failed to deserialize oembed response")?;
-                    let original_title = resp.title.context("oembed response contained no title")?;
-
-                    println!("View on YouTube: https://youtube.com/watch?v={}", video);
-                    println!("Original title: {}", original_title);
-                    println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.");
-                    println!();
-
-                    let mut builder = tabled::builder::Builder::new();
-                    builder.push_record(["Submitted", "Title", "Score", "UUID", "Username", "User ID"]);
-
-                    let mut score_length = 1;
-
-                    for title in &titles {
-                        score_length = score_length.max(if title.score == 0 { 1 } else { title.score.abs().ilog10() + 1 + (title.score.is_negative() as u32) })
-                            .max(if title.votes == 0 { 1 } else { title.votes.abs().ilog10() + 1 })
-                            .max(if title.downvotes == 0 { 1 } else { title.downvotes.abs().ilog10() + 1 });
-                    }
-
-                    for title in &titles {
-                        let mut flags = format!("{:>width$} ({:>+width$} | {})", title.score, title.votes,
-                            if title.downvotes == 0 {
-                                format!("{: >width$}-0", "", width = score_length.saturating_sub(2) as usize)
-                            } else {
-                                format!("{:->width$}", -title.downvotes, width = score_length as usize)
-                            }, width = score_length as usize);
-
-                        let mut flag = false;
-                        flags.push_str(", ");
-
-                        if title.votes - title.downvotes < -1 {
-                            flags.push_str("d"); // Removed by downvotes
-                            flag = true;
-                        } else if title.votes < 0 {
-                            flags.push_str("r"); // Replaced by submitter
-                            flag = true;
-                        } else if title.score < 0 {
-                            flags.push_str("h"); // Title should only appear in submission menus
-                            flag = true;
-                        }
-
-                        if title.unverified {
-                            flags.push_str("u"); // Submitted by unverified user
-                            flag = true;
-                        }
-
-                        if title.locked {
-                            flags.push_str("l"); // Locked by a VIP
-                            flag = true;
-                        }
-
-                        if title.removed {
-                            flags.push_str("m"); // Removed by VIP
-                            flag = true;
-                        }
-
-                        if title.vip {
-                            flags.push_str("v"); // Submitted by VIP
-                            flag = true;
-                        }
-
-                        if title.shadow_hidden {
-                            flags.push_str("x"); // Shadowhidden
-                            flag = true;
-                        }
-
-                        if !flag {
-                            flags.truncate(flags.len() - 2);
-                        }
-
-                        builder.push_record([
-                            DateTime::from_timestamp_millis(title.time_submitted).map_or(title.time_submitted.to_string(), utils::render_datetime),
-                            title.title.to_string(),
-                            flags,
-                            title.uuid.to_string(),
-                            if let Some(username) = title.username.as_ref().map(Arc::clone) { format!("\"{}\"", username) } else { String::new() },
-                            title.user_id.to_string(),
-                        ]);
-                    }
-
-                    let table_settings = tabled::settings::Settings::default()
-                        .with(tabled::settings::Style::psql())
-                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority(tabled::settings::peaker::PriorityMax))
-                        .with(tabled::settings::Width::increase(terminal_width as usize));
-
-                    let mut table = builder.build();
-                    table.with(table_settings);
-
-                    for (i, _) in titles.iter().enumerate() {
-                        table.modify(tabled::settings::object::Cell::new(i, 4),
-                            tabled::settings::Width::truncate(16).suffix("..."));
-                    }
-
-                    println!("{}", table);
-                },
-                SubmissionKind::Thumbnail => {
-                    let url = Url::parse(&config.get_thumbnails_by_video_id_api)?;
-                    let url = url.join(&video)?;
-
-                    let response = client.get(url).header("User-Agent", USER_AGENT).send().context("Failed to send branding request")?;
-
-                    if response.status() != 200 {
-                        bail!("Failed to get thumbnails. Response: {}\n{}", response.status(), response.text()?);
-                    }
-
-                    let mut thumbnails: Vec<ApiThumbnail> = response.json()?;
-                    thumbnails.sort_by(|a, b| a.time_submitted.cmp(&b.time_submitted).reverse());
-
-                    println!("View on YouTube: https://youtube.com/watch?v={}", video);
-                    println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.");
-                    println!();
-
-                    let mut builder = tabled::builder::Builder::new();
-                    builder.push_record(["Submitted", "Timestamp", "Score", "UUID", "Username", "User ID"]);
-
-                    let mut score_length = 1;
-
-                    for title in &thumbnails {
-                        score_length = score_length.max(if title.score == 0 { 1 } else { title.score.abs().ilog10() + 1 + (title.score.is_negative() as u32) })
-                            .max(if title.votes == 0 { 1 } else { title.votes.abs().ilog10() + 1 })
-                            .max(if title.downvotes == 0 { 1 } else { title.downvotes.abs().ilog10() + 1 });
-                    }
-
-                    for thumbnail in thumbnails {
-                        let mut flags = format!("{:>width$} ({:>+width$} | {})", thumbnail.score, thumbnail.votes,
-                            if thumbnail.downvotes == 0 {
-                                format!("{: >width$}-0", "", width = score_length.saturating_sub(2) as usize)
-                            } else {
-                                format!("{:->width$}", -thumbnail.downvotes, width = score_length as usize)
-                            }, width = score_length as usize);
-
-                        if thumbnail.votes - thumbnail.downvotes < -1 {
-                            flags.push_str(", d"); // Removed by downvotes
-                        } else if thumbnail.score < 0 {
-                            flags.push_str(", h"); // Title should only appear in submission menus
-                        }
-
-                        if thumbnail.locked {
-                            flags.push_str(", l"); // Locked by a VIP
-                        }
-
-                        if thumbnail.removed {
-                            flags.push_str(", rm"); // Removed by VIP
-                        }
-
-                        if thumbnail.vip {
-                            flags.push_str(", v"); // Submitted by VIP
-                        }
-
-                        if thumbnail.shadow_hidden {
-                            flags.push_str(", x"); // Shadowhidden
-                        }
-
-                        builder.push_record([
-                            DateTime::from_timestamp_millis(thumbnail.time_submitted).map_or(thumbnail.time_submitted.to_string(), utils::render_datetime),
-                            thumbnail.timestamp.map(|t| t.to_string()).unwrap_or_else(|| if thumbnail.original { String::from("Original") } else { String::from("Unknown") }),
-                            flags,
-                            thumbnail.uuid.to_string(),
-                            if let Some(username) = thumbnail.username { format!("\"{}\"", username) } else { String::new() },
-                            thumbnail.user_id.to_string(),
-                        ]);
-                    }
-
-                    let table_settings = tabled::settings::Settings::default()
-                        .with(tabled::settings::Style::psql())
-                        .with(tabled::settings::Width::wrap(terminal_width as usize).priority(tabled::settings::peaker::PriorityMax))
-                        .with(tabled::settings::Width::increase(terminal_width as usize));
-
-                    let table = builder.build().with(table_settings).to_string();
-                    println!("{}", table);
-                },
-            }
-
-            Ok(())
-        },
-        Verb::Batch { input, no_autolock, simulate } => {
-            let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Failed to get private user ID")?;
-
-            let mut request_data = HashMap::new();
-            request_data.insert("service", serde_json::Value::String(String::from("YouTube")));
-            request_data.insert("userAgent", serde_json::Value::String(String::from(USER_AGENT)));
-            request_data.insert("userID", serde_json::Value::String(String::from(&private_user_id)));
-            request_data.insert("autoLock", serde_json::Value::Bool(!no_autolock));
-
-            let file = File::open(input).context("Failed to open input file")?;
-            let reader = std::io::BufReader::new(file);
-            let client = reqwest::blocking::Client::new();
-
-            let stdin = std::io::stdin();
-            let mut buf = String::new();
-            let mut reader = csv::Reader::from_reader(reader);
-
-            for record in reader.records() {
-                let record = record.context("Failed to read line in input file")?;
-                let video_id = record.get(0).ok_or(anyhow!("Failed to get column 0 from CSV record"))?;
-                let old_title = record.get(1).ok_or(anyhow!("Failed to get column 1 from CSV record"))?;
-
-                let url = Url::parse_with_params(
-                    "https://www.youtube-nocookie.com/oembed",
-                    &[("url", format!("https://youtu.be/{}", video_id))]
-                ).context("Failed to construct an oembed request URL")?;
-                let resp: OEmbedResponse = client.get(url).header("User-Agent", USER_AGENT)
-                    .send().context("Failed to send oembed request")?
-                    .json().context("Failed to deserialize oembed response")?;
-                let original_title = resp.title.context("oembed response contained no title")?;
-
-                println!("[{}, {}] {}", video_id, original_title, old_title);
-                stdin.read_line(&mut buf).context("Failed to read stdin")?;
-
-                if buf == "\n" {
-                    buf.clear();
-                    println!("Skipped.\n");
-                    continue;
-                }
-
-                request_data.insert("videoID", serde_json::Value::String(video_id.to_owned()));
-                request_data.insert("title", serde_json::Value::Object([
-                    (String::from("title"), serde_json::Value::String(buf[..buf.len() - 1].to_string())),
-                ].into_iter().collect()));
-
-                if !simulate {
-                    let response = client.post(&config.post_branding_api)
-                        .header("User-Agent", USER_AGENT)
-                        .json(&request_data)
-                        .send().context("Failed to send branding request")?;
-                    println!("Sent request. Response: {}\n", response.status());
-                } else {
-                    println!("Not sending request: {}\n", serde_json::to_string_pretty(&request_data).context("Failed to serialize request to JSON")?);
-                }
-
-                buf.clear();
-            }
-
-            Ok(())
-        },
+        Verb::Vote { kind, video, downvote, no_autolock } =>
+            command::vote::run(config.options, client, terminal_width, kind, video, downvote, no_autolock),
+        Verb::View { video, kind } =>
+            command::view::run(config.options, client, terminal_width, video, kind),
+        Verb::User { user, subcommand } =>
+            command::user::run(config.options, client, terminal_width, user, subcommand),
+        Verb::Batch { input, no_autolock, simulate } =>
+            command::batch::run(config.options, client, terminal_width, input, no_autolock, simulate),
     }
 }
