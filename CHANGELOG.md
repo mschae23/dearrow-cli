@@ -3,6 +3,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+## Removed
+- `--post-branding-api`, `--get-titles-by-video-id-api`, and `--get-thumbnails-by-video-id-api` in favor of
+  `--main-api` (for APIs provided by SponsorBlockServer or compatible) and `--browser-api` (for APIs provided by
+  DeArrowBrowser or compatible).
+
+This is a breaking change.
+
+## Added
+- `--main-api` and `--browser-api` arguments: see above.
+- `user <USER_ID> warnings (issued | received) [--newest <NEWEST>]` subcommand.
+  - This will display the warnings issued or received by a specific SponsorBlock or DeArrow user.
+  - It uses DeArrowBrowser's **internal** API.
+
+## Changed
+- `view` and `vote` subcommands no longer take the video ID as a flag (like `--video <VIDEO_ID>` or `-v <VIDEO_ID>`).
+  Instead, they just take it as a regular argument: `vote <VIDEO_ID> title "Example"`.
+
+This is a breaking change.
+
 ## [3.4.1] – 2024-11-17
 
 ### Changed
