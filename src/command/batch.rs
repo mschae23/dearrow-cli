@@ -34,12 +34,12 @@ pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width:
             .json().context("Failed to deserialize oembed response")?;
         let original_title = resp.title.context("oembed response contained no title")?;
 
-        println!("[{}, {}] {}", video_id, original_title, old_title);
+        eprintln!("[{}, {}] {}", video_id, original_title, old_title);
         stdin.read_line(&mut buf).context("Failed to read stdin")?;
 
         if buf == "\n" {
             buf.clear();
-            println!("Skipped.\n");
+            eprintln!("Skipped.\n");
             continue;
         }
 
@@ -55,9 +55,9 @@ pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width:
                 .header("User-Agent", crate::USER_AGENT)
                 .json(&request_data)
                 .send().context("Failed to send branding request")?;
-            println!("Sent request. Response: {}\n", response.status());
+            eprintln!("Sent request. Response: {}\n", response.status());
         } else {
-            println!("Not sending request: {}\n", serde_json::to_string_pretty(&request_data).context("Failed to serialize request to JSON")?);
+            eprintln!("Not sending request: {}\n", serde_json::to_string_pretty(&request_data).context("Failed to serialize request to JSON")?);
         }
 
         buf.clear();

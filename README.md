@@ -33,6 +33,7 @@ By default, this uses [DeArrow Browser](https://github.com/mini-bomba/DeArrowBro
 Uses DeArrow data licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) from <https://dearrow.ajay.app/>.
 
 Legend:
+- `o`: Original title
 - `d`: Removed by downvotes
 - `r`: Replaced by submitter
 - `h`: Title / thumbnail should only appear in submission menu (score < 0)

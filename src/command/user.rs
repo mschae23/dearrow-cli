@@ -34,7 +34,9 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
             }
 
             let table_settings = tabled::settings::Settings::default()
-                .with(tabled::settings::Style::psql())
+                .with(tabled::settings::Style::psql().line_horizontal(
+                    tabled::settings::style::HorizontalLine::full('-', '+', ' ', ' '))
+                    .horizontals([(1, tabled::settings::style::HorizontalLine::full('=', ':', ' ', ' '))]))
                 .with(tabled::settings::Width::wrap(terminal_width as usize).priority(tabled::settings::peaker::PriorityLeft::new()));
 
             let table = builder.build().with(table_settings).to_string();

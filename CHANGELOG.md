@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
@@ -14,15 +14,19 @@ This is a breaking change.
 
 ## Added
 - `--main-api` and `--browser-api` arguments: see above.
-- `user <USER_ID> warnings (issued | received) [--newest <NEWEST>]` subcommand.
+- `user <USER_ID> warnings (issued | received) [--newest <NEWEST>]` command.
   - This will display the warnings issued or received by a specific SponsorBlock or DeArrow user.
   - It uses DeArrowBrowser's **internal** API.
+- `--was-warned` flag for votes on titles.
+  - This will self-report the submission, used for when users dismiss an auto-warning in the actual addon.
+- `o` flag in the `view` command to indicate an original title. It is not displayed for thumbnails, since they
+  show "original" in the timestamp column.
 
 ## Changed
-- `view` and `vote` subcommands no longer take the video ID as a flag (like `--video <VIDEO_ID>` or `-v <VIDEO_ID>`).
+- the `view` and `vote` commands no longer take the video ID as a flag (like `--video <VIDEO_ID>` or `-v <VIDEO_ID>`).
   Instead, they just take it as a regular argument: `vote <VIDEO_ID> title "Example"`.
-
-This is a breaking change.
+  - This is a breaking change.
+- `batch` now uses stderr instead of stdout for user interactions.
 
 ## [3.4.1] – 2024-11-17
 

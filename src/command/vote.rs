@@ -4,7 +4,7 @@ use reqwest::Url;
 
 use crate::{Options, ThumbnailSubmission, VoteSubmissionSubcommand};
 
-pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width: u16, kind: VoteSubmissionSubcommand, video: String, downvote: bool, no_autolock: bool) -> anyhow::Result<()> {
+pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width: u16, kind: VoteSubmissionSubcommand, video: String, downvote: bool, no_autolock: bool) -> anyhow::Result<reqwest::blocking::Response> {
     let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Could not get private user ID")?;
 
     let mut request_data = HashMap::new();
@@ -48,5 +48,5 @@ pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width:
         .send().context("Failed to send branding request")?;
     eprintln!("Sent request. Response: {}", response.status());
 
-    Ok(())
+    response.error_for_status().context("Server returned error")
 }

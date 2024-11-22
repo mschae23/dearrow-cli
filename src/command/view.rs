@@ -30,10 +30,9 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
                 .json().context("Failed to deserialize oembed response")?;
             let original_title = resp.title.context("oembed response contained no title")?;
 
-            println!("View on YouTube: https://youtube.com/watch?v={}", video);
+            println!("View on YouTube: https://www.youtube.com/watch?v={}", video);
             println!("Original title: {}", original_title);
-            println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.");
-            println!();
+            println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.\n");
 
             let mut builder = tabled::builder::Builder::new();
             builder.push_record(["Submitted", "Title", "Score", "UUID", "Username", "User ID"]);
@@ -47,60 +46,57 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
             }
 
             for title in &titles {
-                let mut flags = format!("{:>width$} ({:>+width$} | {})", title.score, title.votes,
+                let mut score = format!("{:>width$} ({:>+width$} | {})", title.score, title.votes,
                     if title.downvotes == 0 {
                         format!("{: >width$}-0", "", width = score_length.saturating_sub(2) as usize)
                     } else {
                         format!("{:->width$}", -title.downvotes, width = score_length as usize)
                     }, width = score_length as usize);
 
-                let mut flag = false;
-                flags.push_str(", ");
+                let mut flags = String::new();
 
-                if title.votes - title.downvotes < -1 {
-                    flags.push_str("d"); // Removed by downvotes
-                    flag = true;
+                if title.original {
+                    flags.push('o');
+                }
+
+                if title.removed || title.shadow_hidden {
+                    if title.removed {
+                        flags.push('m'); // Removed by VIP
+                    }
+
+                    if title.shadow_hidden {
+                        flags.push('x'); // Shadowhidden
+                    }
+                } else if title.votes - title.downvotes < -1 {
+                    flags.push('d'); // Removed by downvotes
                 } else if title.votes < 0 {
-                    flags.push_str("r"); // Replaced by submitter
-                    flag = true;
-                } else if title.score < 0 {
-                    flags.push_str("h"); // Title should only appear in submission menus
-                    flag = true;
+                    flags.push('r'); // Replaced by submitter
+                } else if !title.locked && title.score < 0 {
+                    flags.push('h'); // Title should only appear in submission menus
                 }
 
                 if title.unverified {
-                    flags.push_str("u"); // Submitted by unverified user
-                    flag = true;
+                    flags.push('u'); // Submitted by unverified user
                 }
 
                 if title.locked {
-                    flags.push_str("l"); // Locked by a VIP
-                    flag = true;
-                }
-
-                if title.removed {
-                    flags.push_str("m"); // Removed by VIP
-                    flag = true;
+                    flags.push('l'); // Locked by a VIP
                 }
 
                 if title.vip {
-                    flags.push_str("v"); // Submitted by VIP
-                    flag = true;
+                    flags.push('v'); // Submitted by VIP
                 }
 
-                if title.shadow_hidden {
-                    flags.push_str("x"); // Shadowhidden
-                    flag = true;
-                }
-
-                if !flag {
-                    flags.truncate(flags.len() - 2);
+                if !flags.is_empty() {
+                    score.reserve(2 + flags.len());
+                    score.push_str(", ");
+                    score.push_str(&flags);
                 }
 
                 builder.push_record([
                     DateTime::from_timestamp_millis(title.time_submitted).map_or(title.time_submitted.to_string(), utils::render_datetime),
                     title.title.to_string(),
-                    flags,
+                    score,
                     title.uuid.to_string(),
                     if let Some(username) = title.username.as_ref().map(Arc::clone) { format!("\"{}\"", username) } else { String::new() },
                     title.user_id.to_string(),
@@ -135,9 +131,8 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
             let mut thumbnails: Vec<ApiThumbnail> = response.json()?;
             thumbnails.sort_by(|a, b| a.time_submitted.cmp(&b.time_submitted).reverse());
 
-            println!("View on YouTube: https://youtube.com/watch?v={}", video);
-            println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.");
-            println!();
+            println!("View on YouTube: https://www.youtube.com/watch?v={}", video);
+            println!("Uses DeArrow data licensed under CC BY-NC-SA 4.0 from https://dearrow.ajay.app/.\n");
 
             let mut builder = tabled::builder::Builder::new();
             builder.push_record(["Submitted", "Timestamp", "Score", "UUID", "Username", "User ID"]);
@@ -151,39 +146,51 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
             }
 
             for thumbnail in thumbnails {
-                let mut flags = format!("{:>width$} ({:>+width$} | {})", thumbnail.score, thumbnail.votes,
+                let mut score = format!("{:>width$} ({:>+width$} | {})", thumbnail.score, thumbnail.votes,
                     if thumbnail.downvotes == 0 {
                         format!("{: >width$}-0", "", width = score_length.saturating_sub(2) as usize)
                     } else {
                         format!("{:->width$}", -thumbnail.downvotes, width = score_length as usize)
                     }, width = score_length as usize);
 
-                if thumbnail.votes - thumbnail.downvotes < -1 {
-                    flags.push_str(", d"); // Removed by downvotes
-                } else if thumbnail.score < 0 {
-                    flags.push_str(", h"); // Title should only appear in submission menus
+                let mut flags = String::new();
+
+                if thumbnail.removed || thumbnail.shadow_hidden {
+                    if thumbnail.removed {
+                        flags.push('m'); // Removed by VIP
+                    }
+
+                    if thumbnail.shadow_hidden {
+                        flags.push('x'); // Shadowhidden
+                    }
+                } else if thumbnail.votes - thumbnail.downvotes < -1 {
+                    flags.push('d'); // Removed by downvotes
+                } else if !thumbnail.locked {
+                    if (thumbnail.original && thumbnail.score < 1) || thumbnail.score < 0 {
+                        // if original: Thumbnail has insufficient score to be shown (needs >=1 or lock)
+                        // if not:      Thumbnail should only appear in submission menus
+                        flags.push('h');
+                    }
                 }
 
                 if thumbnail.locked {
-                    flags.push_str(", l"); // Locked by a VIP
-                }
-
-                if thumbnail.removed {
-                    flags.push_str(", rm"); // Removed by VIP
+                    flags.push('l'); // Locked by a VIP
                 }
 
                 if thumbnail.vip {
-                    flags.push_str(", v"); // Submitted by VIP
+                    flags.push('v'); // Submitted by VIP
                 }
 
-                if thumbnail.shadow_hidden {
-                    flags.push_str(", x"); // Shadowhidden
+                if !flags.is_empty() {
+                    score.reserve(2 + flags.len());
+                    score.push_str(", ");
+                    score.push_str(&flags);
                 }
 
                 builder.push_record([
                     DateTime::from_timestamp_millis(thumbnail.time_submitted).map_or(thumbnail.time_submitted.to_string(), utils::render_datetime),
                     thumbnail.timestamp.map(|t| t.to_string()).unwrap_or_else(|| if thumbnail.original { String::from("Original") } else { String::from("Unknown") }),
-                    flags,
+                    score,
                     thumbnail.uuid.to_string(),
                     if let Some(username) = thumbnail.username { format!("\"{}\"", username) } else { String::new() },
                     thumbnail.user_id.to_string(),

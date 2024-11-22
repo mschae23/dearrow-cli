@@ -185,7 +185,7 @@ pub enum UserSubcommand {
         #[arg(value_enum)]
         kind: WarningKind,
         /// Only show the newest n warnings. Set to `0` to show all.
-        #[arg(long, default_value = "0")]
+        #[arg(long, short = 'n', default_value = "0")]
         newest: usize,
     },
     // TODO Submissions
@@ -222,8 +222,10 @@ fn main() -> anyhow::Result<()> {
     let terminal_width = termsize::get().map(|size| size.cols).unwrap_or(120);
 
     match config.verb {
-        Verb::Vote { kind, video, downvote, no_autolock } =>
-            command::vote::run(config.options, client, terminal_width, kind, video, downvote, no_autolock),
+        Verb::Vote { kind, video, downvote, no_autolock } => {
+            command::vote::run(config.options, client, terminal_width, kind, video, downvote, no_autolock)?;
+            Ok(())
+        },
         Verb::View { video, kind } =>
             command::view::run(config.options, client, terminal_width, video, kind),
         Verb::User { user, subcommand } =>
