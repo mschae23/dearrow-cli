@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [4.0.0] - 2024-11-24
 
 ### Removed
 - `--post-branding-api`, `--get-titles-by-video-id-api`, and `--get-thumbnails-by-video-id-api` in favor of
@@ -58,6 +58,7 @@ This is a breaking change.
 ## [3.1.0] - 2024-01-14
 Initial release.
 
+[4.0.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.0.0
 [3.4.1]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.1
 [3.4.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.0
 [3.3.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.3.0

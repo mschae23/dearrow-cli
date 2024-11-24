@@ -59,12 +59,16 @@ index = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
 ```
 dearrow-cli view <VIDEO_ID> title
 dearrow-cli view <VIDEO_ID> thumbnail
+dearrow-cli view <VIDEO_ID> main
 ```
 
-By default, this uses [DeArrow Browser](https://github.com/mini-bomba/DeArrowBrowser)'s internal API.
-Uses DeArrow data licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) from <https://dearrow.ajay.app/>.
+For `title` and `thumbnail`, this uses [DeArrow Browser](https://github.com/mini-bomba/DeArrowBrowser)'s **internal** API
+by default. For `main`, the default is the main SponsorBlockServer instance at <https://sponsor.ajay.app/>.
 
-Legend:
+The DeArrow data displayed is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+from <https://dearrow.ajay.app/>.
+
+Legend for "score" column:
 - `o`: Original title
 - `m`: Removed by a VIP
 - `x`: Shadowhidden
@@ -88,7 +92,19 @@ dearrow-cli vote <VIDEO_ID> --downvote thumbnail at 10.123
 dearrow-cli vote <VIDEO_ID> --downvote thumbnail original
 ```
 
-If you are a VIP user and want to disable auto-lock, pass the `--no-auto-lock` option before `title` or `thumbnail`.
+If you are a VIP user and want to disable auto-lock ("act as VIP" in UI), pass the `--no-auto-lock` option before
+`title` or `thumbnail`.
+
+### Warnings
+```
+dearrow-cli user <USER_ID> warnings received
+dearrow-cli user <USER_ID> warnings issued
+```
+
+Shows tips (internally still called warnings) received or issued by a specific SponsorBlock or DeArrow user. You can
+pass `--newest <N>` or `-n <N>` to only show the newest `N` warnings.
+
+This uses [DeArrow Browser](https://github.com/mini-bomba/DeArrowBrowser)'s **internal** API by default.
 
 ## License
 Copyright (C) 2024  mschae23
