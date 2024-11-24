@@ -26,6 +26,11 @@ sudo dnf install dearrow-cli
 ```
 
 ### Arch
+#### AUR
+A package is available at [dearrow-cli](https://aur.archlinux.org/packages/dearrow-cli). To install it, refer to
+the [Arch user repository](https://wiki.archlinux.org/title/Arch_User_Repository) wiki page.
+
+#### Custom repository
 Import the repository's signing key first:
 ```
 wget -O mschae23-pkg-sign.gpg https://mschae23.de/git/api/packages/mschae23/arch/repository.key
