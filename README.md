@@ -2,15 +2,47 @@
 A CLI program to view and vote for DeArrow submissions.
 
 ## Installation
+System packages are available for Fedora and Arch. Using these is recommended over installing the binary manually.
+
 ### Fedora
-A system package is available for Fedora. To use it, add the repository first:
+Add the repository first:
 ```
 sudo dnf config-manager --add-repo https://mschae23.de/git/api/packages/mschae23/rpm/fc41.repo
 ```
 
-You can then install the package:
+On newer releases, you may have to use the following instead:
+```
+sudo dnf config-manager addrepo --from-repofile=https://mschae23.de/git/api/packages/mschae23/rpm/fc41.repo
+```
+
+When DNF prompts you for the repository's signing key, make sure it has the following fingerprint before accepting:
+```
+60C9 7C71 B476 4DF9 319D  4F02 1315 D06E 9C20 41E8
+```
+
+Then install the package:
 ```
 sudo dnf install dearrow-cli
+```
+
+### Arch
+Import the repository's signing key first:
+```
+wget -O mschae23-pkg-sign.gpg https://mschae23.de/git/api/packages/mschae23/arch/repository.key
+sudo pacman-key --add mschae23-pkg-sign.gpg
+sudo pacman-key --lsign-key 'pkg@mschae23.de'
+```
+
+Add the repository to `/etc/pacman.conf`:
+```
+[mschae23]
+SigLevel = Required
+Server = https://mschae23.de/git/api/packages/mschae23/arch/mschae23/$arch
+```
+
+Then install the package:
+```
+sudo pacman -Sy dearrow-cli
 ```
 
 ### From source
