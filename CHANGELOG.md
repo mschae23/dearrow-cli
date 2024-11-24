@@ -21,6 +21,10 @@ This is a breaking change.
   - This will self-report the submission, used for when users dismiss an auto-warning in the actual addon.
 - `o` flag in the `view` command to indicate an original title. It is not displayed for thumbnails, since they
   show "original" in the timestamp column.
+- `main` argument to `view`, to see live submissions served by a SponsorBlockServer instance rather than DAB.
+  - This shows less useful information: no removed, downvoted (with score <= -2) or shadowhidden submissions,
+    no usernames, no "unverified user" flag, no VIP flag.
+  - Usage: `view <VIDEO_ID> main`
 
 ### Changed
 - the `view` and `vote` commands no longer take the video ID as a flag (like `--video <VIDEO_ID>` or `-v <VIDEO_ID>`).

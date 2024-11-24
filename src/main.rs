@@ -107,6 +107,8 @@ pub enum Verb {
         #[command(subcommand)]
         subcommand: UserSubcommand,
     },
+    // TODO Warn command
+    //      Maybe ban, too
     #[command(hide = true)]
     Batch {
         #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
@@ -128,12 +130,15 @@ pub enum Verb {
 
 #[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SubmissionKind {
-    /// View title submissions.
+    /// View title submissions using DeArrowBrowser's internal API.
     #[value()]
     Title,
-    /// View thumbnail submissions.
+    /// View thumbnail submissions using DeArrowBrowser's internal API.
     #[value()]
     Thumbnail,
+    /// View titles and thumbnails from a live SponsorBlockServer instance.
+    #[value()]
+    Main,
 }
 
 #[derive(clap::Subcommand)]
@@ -199,6 +204,16 @@ pub enum WarningKind {
     /// View warnings received by this user.
     #[value()]
     Received,
+}
+
+#[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Source {
+    /// Query information from a live SponsorBlockServer instance. Uses the `--main-api` flag.
+    #[value()]
+    Main,
+    /// Query information from the interal API of a DeArrow Browser instance. Uses the `--browser-api` flag.
+    #[value()]
+    Browser,
 }
 
 impl WarningKind {
