@@ -7,12 +7,7 @@ System packages are available for Fedora and Arch. Using these is recommended ov
 ### Fedora
 Add the repository first:
 ```
-sudo dnf config-manager --add-repo https://mschae23.de/git/api/packages/mschae23/rpm/fc41.repo
-```
-
-On newer releases, you may have to use the following instead:
-```
-sudo dnf config-manager addrepo --from-repofile=https://mschae23.de/git/api/packages/mschae23/rpm/fc41.repo
+sudo dnf install --repofrompath 'mschae23,https://mschae23.de/git/api/packages/mschae23/rpm/fc$releasever' --setopt='mschae23.gpgkey=https://mschae23.de/git/api/packages/mschae23/rpm/repository.key' mschae23-repos
 ```
 
 When DNF prompts you for the repository's signing key, make sure it has the following fingerprint before accepting:
