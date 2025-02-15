@@ -71,7 +71,7 @@ pub enum Verb {
         /// ID of the video to vote for a submission on.
         #[arg(value_name = "VIDEO_ID")]
         video: String,
-        /// The kind of a submission (title or thumbnail).
+        /// The kind of submission (title or thumbnail).
         #[command(subcommand)]
         kind: VoteSubmissionSubcommand,
         /// When set, downvotes instead of upvoting.
@@ -86,6 +86,11 @@ pub enum Verb {
         /// - Downvoting an existing submission will decrement its score, but not immediately remove it
         #[arg(long, short = 'n', help = "When set, disables auto-lock (only has an effect for VIP users)", long_help = "When set, disables auto-lock (only has an effect for VIP users).\n\nDisabling auto-vote makes the vote count like it would coming from a normal user, which means:\n- A new submission is not locked by default\n- Voting for an existing submission will increment its score, but not lock it\n- Downvoting an existing submission will decrement its score, but not immediately remove it")]
         no_autolock: bool,
+        /// When set, indicates that the user has [casual mode] enabled.
+        ///
+        /// [casual mode]: https://wiki.sponsor.ajay.app/w/DeArrow/Casual_mode
+        #[arg(long)]
+        using_casual: bool,
     },
     /// View DeArrow submissions on a video.
     #[command()]
@@ -162,6 +167,37 @@ pub enum VoteSubmissionSubcommand {
         #[command(subcommand)]
         thumbnail: ThumbnailSubmission,
     },
+    /// Vote for a casual category.
+    Casual {
+        #[arg()]
+        categories: Vec<CasualCategory>,
+    },
+}
+
+#[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
+pub enum CasualCategory {
+    #[value()]
+    Funny,
+    #[value()]
+    Creative,
+    #[value()]
+    Clever,
+    #[value()]
+    Descriptive,
+    #[value()]
+    Other,
+}
+
+impl CasualCategory {
+    pub fn name(self) -> &'static str {
+        match self {
+            CasualCategory::Funny => "funny",
+            CasualCategory::Creative => "creative",
+            CasualCategory::Clever => "clever",
+            CasualCategory::Descriptive => "descriptive",
+            CasualCategory::Other => "other",
+        }
+    }
 }
 
 #[derive(clap::Subcommand)]
@@ -211,7 +247,7 @@ pub enum Source {
     /// Query information from a live SponsorBlockServer instance. Uses the `--main-api` flag.
     #[value()]
     Main,
-    /// Query information from the interal API of a DeArrow Browser instance. Uses the `--browser-api` flag.
+    /// Query information from the internal API of a DeArrow Browser instance. Uses the `--browser-api` flag.
     #[value()]
     Browser,
 }
@@ -237,8 +273,8 @@ fn main() -> anyhow::Result<()> {
     let terminal_width = termsize::get().map(|size| size.cols).unwrap_or(120);
 
     match config.verb {
-        Verb::Vote { kind, video, downvote, no_autolock } => {
-            command::vote::run(config.options, client, terminal_width, kind, video, downvote, no_autolock)?;
+        Verb::Vote { kind, video, downvote, no_autolock, using_casual } => {
+            command::vote::run(config.options, client, terminal_width, kind, video, downvote, no_autolock, using_casual)?;
             Ok(())
         },
         Verb::View { video, kind } =>

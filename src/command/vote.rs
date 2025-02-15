@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
-use anyhow::{Context, anyhow};
+use anyhow::{anyhow, Context};
 use reqwest::Url;
+use std::collections::HashMap;
 
-use crate::{Options, ThumbnailSubmission, VoteSubmissionSubcommand};
+use crate::{CasualCategory, Options, ThumbnailSubmission, VoteSubmissionSubcommand};
 
-pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width: u16, kind: VoteSubmissionSubcommand, video: String, downvote: bool, no_autolock: bool) -> anyhow::Result<reqwest::blocking::Response> {
+pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width: u16, kind: VoteSubmissionSubcommand, video: String, downvote: bool, no_autolock: bool, using_casual: bool) -> anyhow::Result<reqwest::blocking::Response> {
     let private_user_id = std::env::var("SPONSORBLOCK_PRIVATE_USERID").context("Could not get private user ID")?;
 
     let mut request_data = HashMap::new();
@@ -29,7 +29,13 @@ pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width:
     request_data.insert("userID", serde_json::Value::String(String::from(&private_user_id)));
     request_data.insert("videoID", serde_json::Value::String(video));
     request_data.insert("downvote", serde_json::Value::Bool(downvote));
-    request_data.insert("autoLock", serde_json::Value::Bool(!no_autolock));
+
+    let is_casual = matches!(&kind, &VoteSubmissionSubcommand::Casual { .. });
+
+    if !is_casual {
+        request_data.insert("autoLock", serde_json::Value::Bool(!no_autolock));
+        request_data.insert("casualMode", serde_json::Value::Bool(using_casual));
+    }
 
     match kind {
         VoteSubmissionSubcommand::Title { title, was_warned, } => {
@@ -53,10 +59,18 @@ pub fn run(options: Options, client: reqwest::blocking::Client, _terminal_width:
                 },
             }
         },
+        VoteSubmissionSubcommand::Casual { categories } => {
+            if downvote {
+                request_data.insert("categories", serde_json::Value::Array(vec![]));
+            } else {
+                request_data.insert("categories", serde_json::Value::Array(categories.into_iter()
+                    .map(CasualCategory::name).map(String::from).map(serde_json::Value::String).collect()));
+            }
+        },
     }
 
     let url = Url::parse(&options.main_api)?;
-    let url = url.join("branding")?;
+    let url = url.join(if is_casual { "casual" } else { "branding" })?;
 
     let response = client.post(url)
         .header("User-Agent", crate::USER_AGENT)

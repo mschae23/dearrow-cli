@@ -95,6 +95,15 @@ dearrow-cli vote <VIDEO_ID> --downvote thumbnail original
 If you are a VIP user and want to disable auto-lock ("act as VIP" in UI), pass the `--no-auto-lock` option before
 `title` or `thumbnail`.
 
+It is also possible to vote for a casual mode category.
+
+```
+dearrow-cli vote <VIDEO_ID> casual <CATEGORY>...
+dearrow-cli vote <VIDEO_ID> --downvote casual
+```
+
+Note that the `--no-auto-lock` and `--using-casual` flags are still accepted in this mode, but will have no effect.
+
 ### Warnings
 ```
 dearrow-cli user <USER_ID> warnings received

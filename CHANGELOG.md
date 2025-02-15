@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+## [4.1.0] - 2025-02-15
+
+### Added
+- For normal title and thumbnail votes, you can now pass the `--using-casual` flag to indicate that
+  you use casual mode. This is saved alongside the submission.
+- A new subcommand for `vote`: `dearrow-cli vote <VIDEO_ID> casual <CATEGORY>*` or `dearrow-cli vote <VIDEO_ID> --downvote casual`
+
 ## [4.0.0] - 2024-11-24
 
 ### Removed
@@ -58,6 +67,7 @@ This is a breaking change.
 ## [3.1.0] - 2024-01-14
 Initial release.
 
+[4.1.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.1.0
 [4.0.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.0.0
 [3.4.1]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.1
 [3.4.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.0
