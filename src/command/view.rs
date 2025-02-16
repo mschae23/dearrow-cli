@@ -48,9 +48,17 @@ pub struct MainApiThumbnail {
 }
 
 #[derive(Deserialize, Clone, PartialEq)]
+pub struct MainApiCasualVote {
+    pub id: crate::CasualCategory,
+    pub count: i32,
+}
+
+#[derive(Deserialize, Clone, PartialEq)]
 pub struct MainApiResponse {
     pub titles: Vec<MainApiTitle>,
     pub thumbnails: Vec<MainApiThumbnail>,
+    #[serde(rename = "casualVotes")]
+    pub casual_votes: Vec<MainApiCasualVote>,
 
     #[serde(rename = "randomTime")]
     pub random_time: Option<f64>,
@@ -107,6 +115,12 @@ pub fn run(options: Options, client: reqwest::blocking::Client, terminal_width: 
                 } else {
                     write!(stdout, "Random time: {}\n", random_time)?;
                 }
+            }
+
+            if !response.casual_votes.is_empty() {
+                write!(stdout, "Casual votes: {}\n", response.casual_votes.into_iter()
+                    .map(|vote| format!("{}x {}", vote.count, vote.id.name()))
+                    .collect::<Vec<_>>().join(", "))?;
             }
 
             let mut titles_builder = tabled::builder::Builder::new();

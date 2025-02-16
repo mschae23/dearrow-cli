@@ -5,6 +5,11 @@ The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [4.2.0] - 2025-02-16
+
+### Added
+- Casual votes are now shown in the output of `dearrow-cli view <VIDEO_ID> main`.
+
 ## [4.1.0] - 2025-02-15
 
 ### Added
@@ -67,6 +72,7 @@ This is a breaking change.
 ## [3.1.0] - 2024-01-14
 Initial release.
 
+[4.2.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.2.0
 [4.1.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.1.0
 [4.0.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.0.0
 [3.4.1]: https://github.com/mschae23/dearrow-cli/releases/tag/v3.4.1

@@ -174,17 +174,22 @@ pub enum VoteSubmissionSubcommand {
     },
 }
 
-#[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(clap::ValueEnum, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CasualCategory {
     #[value()]
+    #[serde(rename = "funny")]
     Funny,
     #[value()]
+    #[serde(rename = "creative")]
     Creative,
     #[value()]
+    #[serde(rename = "clever")]
     Clever,
     #[value()]
+    #[serde(rename = "descriptive")]
     Descriptive,
     #[value()]
+    #[serde(rename = "other")]
     Other,
 }
 
