@@ -1,0 +1,296 @@
+.TH DEARROW-CLI 1 2025-03-04
+.SH NAME
+dearrow-cli \- view and vote for DeArrow submissions
+.SH SYNOPSIS
+.B dearrow-cli
+[\fIOPTION\fR...\&]
+.B vote
+.I VIDEO_ID
+[\fB\-\-downvote\fR]
+.B title
+[\fB\-\-was\-warned\fR]
+.I TITLE
+.br
+.B dearrow-cli
+[\fIOPTION\fR...\&]
+.B vote
+.I VIDEO_ID
+[\fB\-\-downvote\fR]
+.B thumbnail
+(\fBoriginal\fR | \fBat\fR \fITIMESTAMP\fR)
+.br
+.B dearrow-cli
+[\fIOPTION\fR...\&]
+.B vote
+.I VIDEO_ID
+[\fB\-\-downvote\fR]
+.B casual
+[\fICATEGORY\fR...\&]
+.P
+.B dearrow-cli
+[\fIOPTION\fR...\&]
+.B view
+.I VIDEO_ID
+(\fBtitle\fR | \fBthumbnail\fR | \fBmain\fR)
+.P
+.B dearrow-cli
+[\fIOPTION\fR...\&]
+.B user
+.I USER_ID
+.B warnings
+[\fB\-n\fR, \fB\-\-newest\fR=\fINEWEST\fR]
+(\fBissued\fR | \fBreceived\fR)
+.SH DESCRIPTION
+.B DeArrow\~CLI
+is a client for the DeArrow API with a CLI interface.
+It can be used to view the titles and thumbnails
+that have been submitted on a video by other users,
+as well as being able to submit and vote for them.
+.PP
+When using the subcommand to view submissions,
+DeArrow\~CLI will send an HTTP request to the web server
+configured with \fB\-\-main\-api\fR or \fB\-\-browser\-api\fR,
+depending on whether the request should go to the main DeArrow server
+(with the \fBmain\fR subcommand of \fBview\fR)
+or the DeArrow\~Browser API (used for the \fBtitle\fR and \fBthumbnail\fR
+subcommands).
+Once it gets a result, some general information about the video is printed,
+followed by a formatted table showing all submissions.
+.PP
+When voting for a submission, the HTTP request will always be sent to
+the main server.
+In this case, the program will simply print the status code and text
+from the server's response.
+Note that the
+.B SPONSORBLOCK_\:PRIVATE_\:USERID
+environment variable must be set when voting.
+.SH OPTIONS
+.SS Voting options
+The options described in this subsection are only available when the
+.B vote
+command is used. Note that they have to be passed before the
+submission kind (like \fBtitle\fR or \fBthumbnail\fR),
+unless specified otherwise.
+.TP
+.BR \-d ", " \-\-downvote
+When set, downvotes instead of upvoting.
+.IP
+A downvote request is structurally the same as an upvote,
+but with an extra \fIdownvote\fR flag set.
+.TP
+.BR \-n ", " \-\-no\-autolock
+When set, disables auto-lock. This only has an effect for VIP users.
+.RS
+.PP
+Disabling auto-vote makes the vote count like it would
+coming from a normal user, which means:
+.Bl
+.IP \[bu]
+A new submission is not locked by default.
+.IP \[bu]
+Voting for an existing submission will increment its score,
+but not lock it.
+.IP \[bu]
+Downvoting an existing submission will decrement its score,
+but not immediately remove it.
+.El
+.RE
+.TP
+.BR \-\-using\-casual
+When set, indicates that the user has
+.UR https://wiki.sponsor.ajay.app/w/DeArrow/Casual_mode
+casual mode
+.UE
+enabled.
+.IP
+This option has no effect when the vote being submitted
+is for a casual category.
+.TP
+.BR \-\-was\-warned
+Whether to report this title submission as having been auto-warned.
+This is intended to log potentially low-quality submissions
+to DeArrow moderators.
+Example of titles that the browser addon would flag this way are
+submissions ending with a period,
+submissions that start with the original title if that has
+a question mark (because simply answering a question posed in
+the original title is against the guidelines), etc.
+.IP
+This option is only available for the \fBvote\fR\~[\fIOPTION\fR...\&] \
+\fBtitle\fR subcommand and should be passed after \fBtitle\fR.
+.SS Viewing options
+.TP
+.BR \-n ", " \-\-newest =\fINEWEST
+Only show a limited number of the newest warnings.
+Set to \fB0\fR to show all.
+.IP
+This option is only available for the \fBuser\fR\~[\fIOPTION\fR...\&] \
+\fBwarnings\fR subcommand.
+.SS Miscellaneous options
+These are general options available for all subcommands of
+.BR dearrow-cli .
+Note that, due to restrictions of the argument parsing library
+used in the program, they have to be passed before the subcommand.
+.TP
+.BR \-\-main\-api =\fIMAIN_API\fR
+The URI base for the main voting and query commands.
+It has to be compatible with the DeArrow API, implemented by
+.UR https://github.com/ajayyy/SponsorBlockServer
+\fBSponsorBlockServer\fR
+.UE ).
+.IP
+The value provided will be concatenated with
+the API path to form the final URI used.
+Note that the trailing slash is significant.
+.IP
+[default: \fBhttps://sponsor.ajay.app/api/\fR]
+.TP
+.BR \-\-browser\-api =\fIBROWSER_API\fR
+The URI base of the API used for the database browser commands.
+It has to be compatible with the API of
+.UR https://github.com/mini-bomba/DeArrowBrowser
+DeArrowBrowser
+.UE .
+Please note that the DeArrowBrowser API used by DeArrow\~CLI
+is strictly \fIinternal\fR. It may change at any time without notice,
+which may break the program.
+.IP
+The value provided will be concatenated with
+the API path to form the final URI used.
+Note that the trailing slash is significant.
+.IP
+[default: \fBhttps://dearrow.minibomba.pro/api/\fR]
+.SH NOTES
+.SS Submissions and voting
+If you are used to Sponsor\%Block's segment system, keep in mind that
+submitting and voting work a bit differently in DeArrow.
+In fact, submitting and voting are the exact same action \[en]
+submitting is simply voting for a title or thumbnail that hasn't been
+submitted yet. This also means that unlike SponsorBlock, voting does
+not use UUIDs. Instead, one votes directly for
+a specific string (for titles) or timestamp (for thumbnails).
+.SS Viewing submissions
+Legend for the \[lq]score\[rq] column:
+.Bl
+.IP \[bu]
+.BR o :
+Original title
+.IP \[bu]
+.BR m :
+Removed by a VIP
+.IP \[bu]
+.BR x :
+Shadowhidden
+.IP \[bu]
+.BR d :
+Removed by downvotes
+.IP \[bu]
+.BR r :
+Replaced by submitter
+.IP \[bu]
+.BR h :
+Title / thumbnail should only appear in submission menu (score < 0)
+.IP \[bu]
+.BR u :
+Submitted by unverified user
+.IP \[bu]
+.BR l :
+Locked by a VIP
+.IP \[bu]
+.BR v :
+Submitted by a VIP
+.El
+.SH BUGS
+Bugs can be reported by sending a mail to contact@mschae23.de or,
+preferably, by opening an issue on the
+.UR https://github.com/mschae23/dearrow-cli
+GitHub repository
+.UE .
+Known bugs are tracked on the project's own
+.UR https://mschae23.de/git/mschae23/dearrow-cli
+Git server
+.UE .
+.SH EXAMPLES
+.SS View submissions
+.in +4n
+.EX
+$ dearrow-cli view <VIDEO_ID> title
+$ dearrow-cli view <VIDEO_ID> thumbnail
+$ dearrow-cli view <VIDEO_ID> main
+.EE
+.in
+.PP
+.SS Vote
+Voting requires your private ID to be set using the
+.B SPONSORBLOCK_PRIVATE_USERID
+environment variable.
+.PP
+.in +4n
+.EX
+$ dearrow-cli vote <VIDEO_ID> title "Some title"
+$ dearrow-cli vote <VIDEO_ID> --downvote title "A bad title"
+.EE
+.in
+.PP
+.in +4n
+.EX
+$ dearrow-cli vote <VIDEO_ID> thumbnail at 10.123
+$ dearrow-cli vote <VIDEO_ID> thumbnail original
+$ dearrow-cli vote <VIDEO_ID> --downvote thumbnail at 10.123
+$ dearrow-cli vote <VIDEO_ID> --downvote thumbnail original
+.EE
+.in
+.PP
+If you are a VIP user and want to
+disable auto-lock (\[lq]act as VIP\[rq] in the UI),
+pass the \fB\-\-no\-autolock\fR option before
+.BR title " or " thumbnail .
+.PP
+It is also possible to vote for a casual mode category.
+.PP
+.in +4n
+.EX
+$ dearrow-cli vote <VIDEO_ID> casual <CATEGORY>...
+$ dearrow-cli vote <VIDEO_ID> --downvote casual
+.EE
+.in
+.PP
+Note that the \fB\-\-no\-autolock\fR and \fB\-\-using\-casual\fR flags
+are still accepted in this mode, but will have no effect.
+.SS Warnings
+.in +4n
+.EX
+$ dearrow-cli user <USER_ID> warnings received
+$ dearrow-cli user <USER_ID> warnings issued
+.EE
+.in
+.PP
+Shows warnings received or issued by a specific
+SponsorBlock or DeArrow user.
+You can pass \fB\-\-newest\fR \fIN\fR or \fB\-n\fR \fIN\fR to
+only show the newest \fIN\fR warnings.
+.PP
+This uses
+.UR https://github.com/mini-bomba/DeArrowBrowser
+DeArrow Browser
+.UE 's
+.I internal
+API by default.
+.SH COPYRIGHT
+Copyright (C) 2025  mschae23
+.PP
+DeArrow\~CLI is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+DeArrow\~CLI is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+You should have received a copy of the GNU Affero General Public License
+along with DeArrow\~CLI.  If not, see <https://www.gnu.org/licenses/>.
+.PP
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without any warranty.
