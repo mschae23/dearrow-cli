@@ -5,6 +5,11 @@ The format is based on [Keep a changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [4.3.0] - 2025-03-04
+
+### Added
+- A manual page.
+
 ## [4.2.0] - 2025-02-16
 
 ### Added
@@ -72,6 +77,7 @@ This is a breaking change.
 ## [3.1.0] - 2024-01-14
 Initial release.
 
+[4.3.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.3.0
 [4.2.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.2.0
 [4.1.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.1.0
 [4.0.0]: https://github.com/mschae23/dearrow-cli/releases/tag/v4.0.0
