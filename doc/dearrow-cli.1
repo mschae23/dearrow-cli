@@ -126,6 +126,8 @@ Set to \fB0\fR to show all.
 .IP
 This option is only available for the \fBuser\fR\~[\fIOPTION\fR...\&] \
 \fBwarnings\fR subcommand.
+.IP
+[default: \fB0\fR]
 .SS Miscellaneous options
 These are general options available for all subcommands of
 .BR dearrow-cli .
@@ -160,7 +162,24 @@ the API path to form the final URI used.
 Note that the trailing slash is significant.
 .IP
 [default: \fBhttps://dearrow.minibomba.pro/api/\fR]
+.SH ENVIRONMENT
+.TP
+.B \%SPONSORBLOCK_PRIVATE_USERID
+This environment variable must be set to your private DeArrow user ID
+in order to vote for any submissions.
 .SH NOTES
+.SS DeArrow
+.UR https://dearrow.ajay.app
+DeArrow
+.UE
+is a free, commercial browser addon for
+crowdsourcing better titles and thumbnails on YouTube.
+The goal is to make titles accurate and reduce sensationalism.
+For information on how titles and thumbnails should be chosen,
+please read the
+.UR https://wiki.sponsor.ajay.app/w/DeArrow/Guidelines
+DeArrow guidelines
+.UE .
 .SS Submissions and voting
 If you are used to Sponsor\%Block's segment system, keep in mind that
 submitting and voting work a bit differently in DeArrow.
@@ -169,7 +188,26 @@ submitting is simply voting for a title or thumbnail that hasn't been
 submitted yet. This also means that unlike SponsorBlock, voting does
 not use UUIDs. Instead, one votes directly for
 a specific string (for titles) or timestamp (for thumbnails).
-.SS Viewing submissions
+.SH BUGS
+Bugs can be reported by sending a mail to contact@mschae23.de or,
+preferably, by opening an issue on the
+.UR https://github.com/mschae23/dearrow-cli
+GitHub repository
+.UE .
+Known bugs are tracked on the project's own
+.UR https://mschae23.de/git/mschae23/dearrow-cli
+Git server
+.UE .
+.SH EXAMPLES
+.SS View submissions
+.in +4n
+$ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBtitle\fR
+.br
+$ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBthumbnail\fR
+.br
+$ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBmain\fR
+.in
+.PP
 Legend for the \[lq]score\[rq] column:
 .Bl
 .IP \[bu]
@@ -200,26 +238,6 @@ Locked by a VIP
 .BR v :
 Submitted by a VIP
 .El
-.SH BUGS
-Bugs can be reported by sending a mail to contact@mschae23.de or,
-preferably, by opening an issue on the
-.UR https://github.com/mschae23/dearrow-cli
-GitHub repository
-.UE .
-Known bugs are tracked on the project's own
-.UR https://mschae23.de/git/mschae23/dearrow-cli
-Git server
-.UE .
-.SH EXAMPLES
-.SS View submissions
-.in +4n
-.EX
-$ dearrow-cli view <VIDEO_ID> title
-$ dearrow-cli view <VIDEO_ID> thumbnail
-$ dearrow-cli view <VIDEO_ID> main
-.EE
-.in
-.PP
 .SS Vote
 Voting requires your private ID to be set using the
 .B SPONSORBLOCK_PRIVATE_USERID
@@ -227,17 +245,21 @@ environment variable.
 .PP
 .in +4n
 .EX
-$ dearrow-cli vote <VIDEO_ID> title "Some title"
-$ dearrow-cli vote <VIDEO_ID> --downvote title "A bad title"
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fBtitle\fR \fI"Some title"\fR
+.br
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fB\-\-downvote title\fR \
+\fI"A bad title"\fR
 .EE
 .in
 .PP
 .in +4n
 .EX
-$ dearrow-cli vote <VIDEO_ID> thumbnail at 10.123
-$ dearrow-cli vote <VIDEO_ID> thumbnail original
-$ dearrow-cli vote <VIDEO_ID> --downvote thumbnail at 10.123
-$ dearrow-cli vote <VIDEO_ID> --downvote thumbnail original
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fBthumbnail\fR at 10.123
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fBthumbnail\fR original
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fB\-\-downvote thumbnail at\fR \
+\fI10.123\fR
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fB\-\-downvote thumbnail \
+original\fR
 .EE
 .in
 .PP
@@ -250,18 +272,22 @@ It is also possible to vote for a casual mode category.
 .PP
 .in +4n
 .EX
-$ dearrow-cli vote <VIDEO_ID> casual <CATEGORY>...
-$ dearrow-cli vote <VIDEO_ID> --downvote casual
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fBcasual\fR \fICATEGORY\fR...\&
+.br
+$ \fBdearrow\-cli vote\fR \fIVIDEO_ID\fR \fB\-\-downvote casual\fR
 .EE
 .in
+.PP
+The following casual categories are available:
+.BR funny ", " creative ", " clever ", " descriptive ", " other "."
 .PP
 Note that the \fB\-\-no\-autolock\fR and \fB\-\-using\-casual\fR flags
 are still accepted in this mode, but will have no effect.
 .SS Warnings
 .in +4n
 .EX
-$ dearrow-cli user <USER_ID> warnings received
-$ dearrow-cli user <USER_ID> warnings issued
+$ \fBdearrow\-cli user\fR \fIUSER_ID\fR \fBwarnings received\fR
+$ \fBdearrow\-cli user\fR \fIUSER_ID\fR \fBwarnings issued\fR
 .EE
 .in
 .PP
