@@ -138,7 +138,7 @@ used in the program, they have to be passed before the subcommand.
 The URI base for the main voting and query commands.
 It has to be compatible with the DeArrow API, implemented by
 .UR https://github.com/ajayyy/SponsorBlockServer
-\fBSponsorBlockServer\fR
+SponsorBlockServer
 .UE ).
 .IP
 The value provided will be concatenated with
@@ -201,11 +201,11 @@ Git server
 .SH EXAMPLES
 .SS View submissions
 .in +4n
+.EX
 $ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBtitle\fR
-.br
 $ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBthumbnail\fR
-.br
 $ \fBdearrow-cli view\fR \fIVIDEO_ID\fR \fBmain\fR
+.EE
 .in
 .PP
 Legend for the \[lq]score\[rq] column:

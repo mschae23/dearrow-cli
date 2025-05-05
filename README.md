@@ -45,6 +45,11 @@ Then install the package:
 sudo pacman -Sy dearrow-cli
 ```
 
+When Pacman prompts you for the repository's signing key, make sure it has the following fingerprint before accepting:
+```
+60C9 7C71 B476 4DF9 319D  4F02 1315 D06E 9C20 41E8
+```
+
 ### From source
 Run `cargo install --path .` in a local clone of this repository. If Cargo complains about the `mschae23` registry being missing,
 add the following to `~/.cargo/config.toml`:
