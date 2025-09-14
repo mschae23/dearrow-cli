@@ -7,7 +7,7 @@ System packages are available for Fedora and Arch. Using these is recommended ov
 ### Fedora
 Add the repository first:
 ```
-sudo dnf install --repofrompath 'mschae23,https://mschae23.de/git/api/packages/mschae23/rpm/fc$releasever' --setopt='mschae23.gpgkey=https://mschae23.de/git/api/packages/mschae23/rpm/repository.key' mschae23-repos
+sudo dnf install --repofrompath 'mschae23,https://pkg.mschae23.de/rpm/fc$releasever' --setopt='mschae23.gpgkey=https://pkg.mschae23.de/rpm/repository.key' mschae23-repos
 ```
 
 When DNF prompts you for the repository's signing key, make sure it has the following fingerprint before accepting:
@@ -28,7 +28,7 @@ the [Arch user repository](https://wiki.archlinux.org/title/Arch_User_Repository
 #### Custom repository
 Import the repository's signing key first:
 ```
-wget -O mschae23-pkg-sign.gpg https://mschae23.de/git/api/packages/mschae23/arch/repository.key
+wget -O mschae23-pkg-sign.gpg https://pkg.mschae23.de/arch/repository.key
 sudo pacman-key --add mschae23-pkg-sign.gpg
 sudo pacman-key --lsign-key 'pkg@mschae23.de'
 ```
@@ -37,7 +37,7 @@ Add the repository to `/etc/pacman.conf`:
 ```
 [mschae23]
 SigLevel = Required
-Server = https://mschae23.de/git/api/packages/mschae23/arch/mschae23/$arch
+Server = https://pkg.mschae23.de/arch/mschae23/$arch
 ```
 
 Then install the package:
@@ -56,7 +56,7 @@ add the following to `~/.cargo/config.toml`:
 
 ```toml
 [registries.mschae23]
-index = "sparse+https://mschae23.de/git/api/packages/mschae23/cargo/"
+index = "sparse+https://pkg.mschae23.de/cargo/"
 ```
 
 ## Usage
